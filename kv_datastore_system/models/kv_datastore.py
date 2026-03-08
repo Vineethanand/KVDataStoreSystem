@@ -26,6 +26,7 @@ class KVDataStore:
     DATA_DIR_CREATION_RETRIES = 3
     DELETE_ENTRY = "__DELETED__"
     DISKTABLE_FILENAME_PREFIX = "disk_table_"
+    COMPACTION_WAIT_TIME = 600
 
     def __init__(self, kv_data_dir, mem_threshold=1000):
         """
@@ -68,11 +69,21 @@ class KVDataStore:
         for filename in sorted(os.listdir(self._kv_data_dir)):
             if filename.startswith(KVDataStore.DISKTABLE_FILENAME_PREFIX):
                 with open(os.path.join(self._kv_data_dir, filename), "r") as dtfp:
-                    entries = dict(sorted(json.load(dtfp).items()))
+                    entries = json.load(dtfp)
                     min_key = min(entries)
                     max_key = max(entries)
                     self._range_of_disktables[filename] = (min_key, max_key)
-                    
+
+    def _set_disktable_range(self, filename):
+        """
+        Method to set the range of keys for a particular disktable
+        """
+        with open(os.path.join(self._kv_data_dir, filename), "r") as dtfp:
+            entries = json.load(dtfp)
+            min_key = min(entries)
+            max_key = max(entries)
+            self._range_of_disktables[filename] = (min_key, max_key)
+
     def _recover_filters(self):
         """
         Method to recover filters in case of a crash.
@@ -243,3 +254,34 @@ class KVDataStore:
                 self._move_to_disktable()
 
         
+    def trigger_compaction(self):
+        """Merges all existing Disktables into a single consolidated file."""
+        disk_table_files = sorted([f for f in os.listdir(self._kv_data_dir) if f.startswith("disk_table_")])
+        if len(disk_table_files) < 2:
+            return
+
+        merged_data = {}
+        # K-way merge: Newer files (later in list) overwrite older ones
+        for filename in disk_table_files:
+            path = os.path.join(self.data_dir, filename)
+            with open(path, "r") as f:
+                data = json.load(f)
+                for k, v in data.items():
+                    if v == KVDataStore.DELETE_ENTRY:
+                        merged_data.pop(k, None)
+                    else:
+                        merged_data[k] = v
+
+        # Write consolidated SSTable
+        new_filename = f"disk_table_compacted_{int(time.time())}.json"
+        with open(os.path.join(self._kv_data_dir, new_filename), "w") as f:
+            json.dump(dict(sorted(merged_data.items())), f)
+
+        # Cleanup old files and filters
+        for filename in disk_table_files:
+            os.remove(os.path.join(self.data_dir, filename))
+            self._filters.pop(filename, None)
+        
+        # Rebuild filter for the new consolidated file
+        self._create_filters_for_disktable(new_filename)
+        self._set_disktable_range(new_filename)

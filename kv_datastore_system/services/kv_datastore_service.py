@@ -1,7 +1,13 @@
 """
 Implements the service for KVDataStore
 """
+import threading
+import time
+import logging
 from kv_datastore_system.models.kv_datastore import KVDataStore
+
+logger = logging.getLogger(__file__)
+logger.setLevel(logging.DEBUG)
 
 class KVDataStoreService:
     """
@@ -13,6 +19,13 @@ class KVDataStoreService:
         # Through dependency injection. Since in this implementation we have
         # only one DataStore model, so initializing it insid the constructor
         self._kv_datastore : KVDataStore = KVDataStore(kv_data_dir, kv_mem_threshold)
+        threading.Thread(target=self._compaction_worker, args=(KVDataStore.COMPACTION_WAIT_TIME,), daemon=True).start()
+
+    def _compaction_worker(self, wait_time=60):
+        while True:
+            time.sleep(wait_time) # Attempt compaction every minute
+            logger.info("Starting background compaction...")
+            self._kv_datastore.trigger_compaction()
 
     def put(self, key, value):
         try:
