@@ -22,7 +22,7 @@ class KVDataStoreController(BaseHTTPRequestHandler):
     """
     Class that handles the requests to the KV Data Store
     """
-    kv_datastore_service  = None
+    kv_datastore_service : KVDataStoreService = None
 
     def _send_json(self, data, status=200):
         self.send_response(status)

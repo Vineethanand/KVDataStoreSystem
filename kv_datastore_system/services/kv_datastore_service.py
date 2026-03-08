@@ -36,13 +36,13 @@ class KVDataStoreService:
     def batch_put(self, key_values):
         try:
             self._kv_datastore.batch_put(key_values)
-        except:
+        except Exception as e:
             raise Exception(f"Error while inserting a batch {key_values}, e")
 
     def read_range(self, start_key, end_key):
         try:
             values = self._kv_datastore.read_key_range(start_key, end_key)
             return values
-        except:
+        except Exception as e:
             raise Exception(f"Error while reading a range from {start_key} to {end_key}, e")
 

@@ -119,12 +119,12 @@ class KVDataStore:
         self._create_filters_for_disktable(disktable_name)
 
         with open(os.path.join(self._kv_data_dir, disktable_name), "w") as dtfp:
-            sorted_entries = sorted(self._memtable.items())
+            sorted_entries = dict(sorted(self._memtable.items()))
             # Find the max and min key in the current memtable
             # Save it as the range of the disktables for easy filtering
             # This will help in the easy filtering during batch read
-            max_key = max(sorted_entries.keys()[-1])
-            min_key = min(sorted_entries.keys())[0]
+            max_key = max(sorted_entries)
+            min_key = min(sorted_entries)
             self._range_of_disktables[disktable_name] = (min_key, max_key)
             json.dump(sorted_entries, dtfp)
         # Clear the memtable once it is written to the disk table file
