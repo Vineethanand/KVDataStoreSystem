@@ -7,12 +7,12 @@ class KVDataStoreService:
     """
     Service class to provide the services of KVDataStore
     """
-    def __init__(self, kv_data_dir="/home/kv_datastore_dir"):
+    def __init__(self, kv_data_dir="/home/kv_datastore_dir", kv_mem_threshold="1000"):
         # The KVDatStore object can be passed from the controller to make sure
         # that the specific DatStore model is used in the backend.
         # Through dependency injection. Since in this implementation we have
         # only one DataStore model, so initializing it insid the constructor
-        self._kv_datastore : KVDataStore = KVDataStore(kv_data_dir)
+        self._kv_datastore : KVDataStore = KVDataStore(kv_data_dir, kv_mem_threshold)
 
     def put(self, key, value):
         try:
