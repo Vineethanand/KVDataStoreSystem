@@ -196,7 +196,7 @@ class KVDataStore:
                     with open(os.path.join(self._kv_data_dir, filename), "r") as dtfp:
                         entries = json.load(dtfp)
                         for key in entries:
-                            if key >= start_key and key <= end_key:
+                            if key >= start_key and key <= end_key and entries[key] != KVDataStore.DELETE_ENTRY:
                                 required_vals.append(entries[key])
 
         return required_vals
