@@ -77,7 +77,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir",required=True,help="Data store directory where the WAL and Disk table files are created")
     parser.add_argument("--port", default=8080, help="Port in which the application has to be started")
-    parser.add_argument("--mem-threshold", default=1000, help="The maximum number of keys to be kept in memory for the Datastore")
+    parser.add_argument("--mem-threshold", type=int, default=1000, help="The maximum number of keys to be kept in memory for the Datastore")
     return parser.parse_args()
 
 if __name__ == "__main__":
