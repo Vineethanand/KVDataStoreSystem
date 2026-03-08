@@ -58,7 +58,21 @@ class KVDataStore:
 
         self._recover_from_wal()
         self._recover_filters()
+        self._recover_disktable_range()
 
+
+    def _recover_disktable_range(self):
+        """
+        Method to recover the min and max keys of the disktable
+        """
+        for filename in sorted(os.listdir(self._kv_data_dir)):
+            if filename.startswith(KVDataStore.DISKTABLE_FILENAME_PREFIX):
+                with open(os.path.join(self._kv_data_dir, filename), "r") as dtfp:
+                    entries = dict(sorted(json.load(dtfp).items()))
+                    min_key = min(entries)
+                    max_key = max(entries)
+                    self._range_of_disktables[filename] = (min_key, max_key)
+                    
     def _recover_filters(self):
         """
         Method to recover filters in case of a crash.
@@ -189,7 +203,7 @@ class KVDataStore:
             if start_key <= key and end_key >= key:
                 required_vals.append(self._memtable[key])
         
-        for filename in sorted(os.listdir(self._kv_data_dir), reverse=True):
+        for filename in sorted(os.listdir(self._kv_data_dir)):
             if filename.startswith(KVDataStore.DISKTABLE_FILENAME_PREFIX):
                 # Check whether the key is with the range of this Disk table
                 if self._range_of_disktables[filename][0] <= start_key and self._range_of_disktables[filename][1] >= end_key:
