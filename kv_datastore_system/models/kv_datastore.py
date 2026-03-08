@@ -11,6 +11,9 @@ import math
 from kv_datastore_system.models.psuedo_bloom_filter import PsuedoBloomFilter
 from kv_datastore_system.exceptions.kv_datastore_exception import KVDataDirectoryCreationError
 
+logger = logging.getLogger(__file__)
+logger.setLevel(logging.DEBUG)
+
 class KVDataStore:
     """
     KVDataStore class that has the core functionalities for
@@ -24,7 +27,7 @@ class KVDataStore:
     DELETE_ENTRY = "__DELETED__"
     DISKTABLE_FILENAME_PREFIX = "disk_table_"
 
-    def __init__(self, kv_data_dir="/tmp/kv_data_dir", mem_threshold=1000):
+    def __init__(self, kv_data_dir, mem_threshold=1000):
         """
         Constructor
         """
@@ -38,15 +41,17 @@ class KVDataStore:
 
         # Save the execption in a variable for future check
         error = None
-        if not os.path.exists(self._kv_data_dir):
-            for attempt in range(KVDataStore.DATA_DIR_CREATION_RETRIES):
-                logging.info("KV Data directory is not present, attempt {attempt} to create")
+        
+        for attempt in range(KVDataStore.DATA_DIR_CREATION_RETRIES):
+            logger.info(f"KV Data directory is not present, attempt {attempt} to create")
+            if not os.path.exists(self._kv_data_dir):
                 try:
                     os.makedirs(self._kv_data_dir)
                 except OSError as e:
                     error = e
-                    logging.info("KV Data directory creation failed!")
-        
+                    logger.info("KV Data directory creation failed!")
+            else:
+                break
         # Raise an error if there is an issue in creating the Data directory
         if error:
             raise KVDataDirectoryCreationError(str(error))
@@ -86,7 +91,10 @@ class KVDataStore:
                         self._memtable[entry['key']] = entry['value']
                     elif entry['op'] == 'delete':
                         self._memtable[entry['key']] = KVDataStore.DELETE_ENTRY
-
+        # else:
+        #     wfp = open(self._wal_path,"w")
+        #     wfp.close()
+                
 
     def _make_wal_entry(self, entry):
         """

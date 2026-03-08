@@ -7,4 +7,4 @@ class KVDataDirectoryCreationError(Exception):
     Exception during the data directory creation
     """
     def __init__(self, message = "Data directory creation failed"):
-        super.__init__(self, message)
+        super().__init__(self, message)

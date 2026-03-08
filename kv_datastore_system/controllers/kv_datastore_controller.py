@@ -9,6 +9,12 @@ import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from http import HTTPStatus
 from urllib.parse import urlparse, parse_qs
+import argparse
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__file__)
+logger.setLevel(logging.DEBUG)
 
 from kv_datastore_system.services.kv_datastore_service import KVDataStoreService
 
@@ -16,8 +22,7 @@ class KVDataStoreController(BaseHTTPRequestHandler):
     """
     Class that handles the requests to the KV Data Store
     """
-    kv_datastore_service : KVDataStoreService = KVDataStoreService()
-
+    kv_datastore_service  = None
 
     def _send_json(self, data, status=200):
         self.send_response(status)
@@ -68,8 +73,18 @@ class KVDataStoreController(BaseHTTPRequestHandler):
         except Exception as e:
             self._send_json({"status": "error" , "message" : str(e)})
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data-dir",required=True,help="Data store directory where the WAL and Disk table files are created")
+    parser.add_argument("--port", default=8080, help="Port in which the application has to be started")
+    return parser.parse_args()
 
 if __name__ == "__main__":
-    server = HTTPServer(('localhost', 8080), KVDataStoreController)
-    print("KV Store API running on port 8080...")
+    args= parse_args()
+    kv_service_obj = KVDataStoreService(args.data_dir)
+    KVDataStoreController.kv_datastore_service = kv_service_obj
+    server_address = ('', args.port)
+    server = HTTPServer(('localhost', args.port), KVDataStoreController)
+    logger.info(f"KV Data Store API running on port {args.port}...")
+    logger.info(f"KV Data Store API has {args.data_dir} as the data store directory")
     server.serve_forever()

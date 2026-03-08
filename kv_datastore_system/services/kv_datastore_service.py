@@ -7,12 +7,12 @@ class KVDataStoreService:
     """
     Service class to provide the services of KVDataStore
     """
-    def __init__(self):
+    def __init__(self, kv_data_dir="/home/kv_datastore_dir"):
         # The KVDatStore object can be passed from the controller to make sure
         # that the specific DatStore model is used in the backend.
         # Through dependency injection. Since in this implementation we have
         # only one DataStore model, so initializing it insid the constructor
-        self._kv_datastore : KVDataStore = KVDataStore()
+        self._kv_datastore : KVDataStore = KVDataStore(kv_data_dir)
 
     def put(self, key, value):
         try:
@@ -41,7 +41,8 @@ class KVDataStoreService:
 
     def read_range(self, start_key, end_key):
         try:
-            self._kv_datastore.read_key_range(start_key, end_key)
+            values = self._kv_datastore.read_key_range(start_key, end_key)
+            return values
         except:
             raise Exception(f"Error while reading a range from {start_key} to {end_key}, e")
 
