@@ -41,6 +41,8 @@ class KVDataStoreService:
 
     def read_range(self, start_key, end_key):
         try:
+            if end_key < start_key:
+                return None
             values = self._kv_datastore.read_key_range(start_key, end_key)
             return values
         except Exception as e:

@@ -197,23 +197,25 @@ class KVDataStore:
         """
         Method to read keys in a range starting from start_key and ending at end_key
         """
-        sorted_keys = sorted(self._memtable)
-        required_vals = []
-        for key in sorted_keys:
+        sorted_items = sorted(self._memtable.items())
+        required_entries = {}
+        for (key, value) in sorted_items:
             if start_key <= key and end_key >= key:
-                required_vals.append(self._memtable[key])
+                required_entries.update({key : value})
         
-        for filename in sorted(os.listdir(self._kv_data_dir)):
+        for filename in sorted(os.listdir(self._kv_data_dir), reverse=True):
             if filename.startswith(KVDataStore.DISKTABLE_FILENAME_PREFIX):
                 # Check whether the key is with the range of this Disk table
-                if self._range_of_disktables[filename][0] <= start_key and self._range_of_disktables[filename][1] >= end_key:
+                if (start_key >= self._range_of_disktables[filename][0] and start_key <= self._range_of_disktables[filename][1]) or \
+                    (end_key >= self._range_of_disktables[filename][0] and end_key <= self._range_of_disktables[filename][1]) :
                     with open(os.path.join(self._kv_data_dir, filename), "r") as dtfp:
                         entries = json.load(dtfp)
                         for key in entries:
-                            if key >= start_key and key <= end_key and entries[key] != KVDataStore.DELETE_ENTRY:
-                                required_vals.append(entries[key])
+                            if key >= start_key and key <= end_key and entries[key] != KVDataStore.DELETE_ENTRY \
+                                and key not in required_entries:
+                                required_entries.update({key:entries[key]})
 
-        return required_vals
+        return required_entries.values()
 
 
     def batch_put(self, key_values : dict):
