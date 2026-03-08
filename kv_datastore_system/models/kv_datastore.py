@@ -215,11 +215,12 @@ class KVDataStore:
                                 and key not in required_entries:
                                 required_entries.update({key:entries[key]})
 
+        required_values = []
         for key in required_entries:
-            if required_entries[key] == KVDataStore.DELETE_ENTRY:
-                required_entries.pop(key)
+            if required_entries[key] != KVDataStore.DELETE_ENTRY:
+                required_values.append(required_entries[key])
 
-        return list(required_entries.values())
+        return required_values
 
 
     def batch_put(self, key_values : dict):
